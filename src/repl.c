@@ -5,28 +5,32 @@
 
 
 
-
+// Enum types for the command status (success or unreconized)
 typedef enum {
   META_COMMAND_SUCCESS,
   META_COMMAND_UNRECOGNIZED_COMMAND
 } MetaCommandResult;
 
+// Initialize the preparation for the result
 typedef enum { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT } PrepareResult;
 
+// Initialize the statements
 typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
 
+// Struct for Statement
 typedef struct {
   StatementType type;
 } Statement;
 
 
-
+// Struct for the buffer
 typedef struct {
   char* buffer;
   size_t buffer_length;
   ssize_t input_length;
 } InputBuffer;
 
+// Allocation of a new Buffer for the user input
 InputBuffer* new_input_buffer() {
   InputBuffer* input_buffer = (InputBuffer*)malloc(sizeof(InputBuffer));
   input_buffer->buffer = NULL;
@@ -36,11 +40,12 @@ InputBuffer* new_input_buffer() {
   return input_buffer;
 }
 
+// Print the command prompt
 void print_prompt() { printf("db > "); }
 
 
 
-
+// Read the user input
 void read_input(InputBuffer* input_buffer) {
   ssize_t bytes_read =
       getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
@@ -55,13 +60,13 @@ void read_input(InputBuffer* input_buffer) {
   input_buffer->buffer[bytes_read - 1] = 0;
 }
 
-
+// Free the memory buffer
 void close_input_buffer(InputBuffer* input_buffer) {
     free(input_buffer->buffer);
     free(input_buffer);
 }
 
-
+// Exit the program
 MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
     close_input_buffer(input_buffer);
@@ -89,16 +94,16 @@ PrepareResult prepare_statement(InputBuffer* input_buffer,
 
 void execute_statement(Statement* statement) {
   switch (statement->type) {
-    case (STATEMENT_INSERT):
+    case (STATEMENT_INSERT):	// INSERT command
     //TODO Implement the command here
       break;
-    case (STATEMENT_SELECT):
+    case (STATEMENT_SELECT):	// SELECT command
       //TODO implement the command here 
       break;
   }
 }
 
-
+// Guess if the statement is reconized or not
 void repl(void){
   InputBuffer* input_buffer = new_input_buffer();
   while (true) {
@@ -112,7 +117,9 @@ void repl(void){
           printf("Unrecognized command '%s'\n", input_buffer->buffer);
           continue;
       }
+
     }
+
     Statement statement;
     switch (prepare_statement(input_buffer, &statement)) {
       case (PREPARE_SUCCESS):
@@ -123,7 +130,8 @@ void repl(void){
                input_buffer->buffer);
         continue;
     }
-     execute_statement(&statement);
+    // Execute the command
+    execute_statement(&statement);
      printf("Executed.\n");
   }
 }
