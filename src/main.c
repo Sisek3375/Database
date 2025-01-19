@@ -4,10 +4,17 @@
 #include <stdbool.h>
 #include <string.h>
 
-
-int main(int argc, char* argv[], char* envp[]){
-  
-  repl();
+// Top of the program
+int main(){
+        printf(“Welcome to the SQL mini-terminal!”);
+        printf(“Available commands :\n”);
+        printf(“- INSERT value: Adds a value to the table”);
+        printf(“ - SELECT : displays table values”);
+        printf(“ - EXIT : exits the program”);
+     
+        // Start the REPL loop
+        repl();
   return 0;
   
 }
+
