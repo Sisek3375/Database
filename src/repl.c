@@ -1,137 +1,80 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
+#include "repl.h"
 
+// function REPL for manage the user interface
+void repl() {
+    char *input = NULL;  // Buffer for the user input
+    size_t len = 0;      // Buffer length
 
+    // Create a dynamic table
+    char **table = NULL;
+    size_t table_size = 0;
+    size_t table_capacity = 2;
 
-// Enum types for the command status (success or unreconized)
-typedef enum {
-  META_COMMAND_SUCCESS,
-  META_COMMAND_UNRECOGNIZED_COMMAND
-} MetaCommandResult;
-
-// Initialize the preparation for the result
-typedef enum { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT } PrepareResult;
-
-// Initialize the statements
-typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
-
-// Struct for Statement
-typedef struct {
-  StatementType type;
-} Statement;
-
-
-// Struct for the buffer
-typedef struct {
-  char* buffer;
-  size_t buffer_length;
-  ssize_t input_length;
-} InputBuffer;
-
-// Allocation of a new Buffer for the user input
-InputBuffer* new_input_buffer() {
-  InputBuffer* input_buffer = (InputBuffer*)malloc(sizeof(InputBuffer));
-  input_buffer->buffer = NULL;
-  input_buffer->buffer_length = 0;
-  input_buffer->input_length = 0;
-
-  return input_buffer;
-}
-
-// Print the command prompt
-void print_prompt() { printf("db > "); }
-
-
-
-// Read the user input
-void read_input(InputBuffer* input_buffer) {
-  ssize_t bytes_read =
-      getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
-
-  if (bytes_read <= 0) {
-    printf("Error reading input\n");
-    exit(EXIT_FAILURE);
-  }
-
-  // Ignore trailing newline
-  input_buffer->input_length = bytes_read - 1;
-  input_buffer->buffer[bytes_read - 1] = 0;
-}
-
-// Free the memory buffer
-void close_input_buffer(InputBuffer* input_buffer) {
-    free(input_buffer->buffer);
-    free(input_buffer);
-}
-
-// Exit the program
-MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
-  if (strcmp(input_buffer->buffer, ".exit") == 0) {
-    close_input_buffer(input_buffer);
-    exit(EXIT_SUCCESS);
-  } else {
-    //TODO  here implement handling of other input as .exit
-    return META_COMMAND_UNRECOGNIZED_COMMAND;
-  }
-}
-
-PrepareResult prepare_statement(InputBuffer* input_buffer,
-                                Statement* statement) {
-
-  if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
-    statement->type = STATEMENT_INSERT;
-    return PREPARE_SUCCESS;
-  }
-  if (strcmp(input_buffer->buffer, "select") == 0) {
-    statement->type = STATEMENT_SELECT;
-    return PREPARE_SUCCESS;
-  }
-
-  return PREPARE_UNRECOGNIZED_STATEMENT;
-}
-
-void execute_statement(Statement* statement) {
-  switch (statement->type) {
-    case (STATEMENT_INSERT):	// INSERT command
-    //TODO Implement the command here
-      break;
-    case (STATEMENT_SELECT):	// SELECT command
-      //TODO implement the command here 
-      break;
-  }
-}
-
-// Guess if the statement is reconized or not
-void repl(void){
-  InputBuffer* input_buffer = new_input_buffer();
-  while (true) {
-    print_prompt();
-    read_input(input_buffer);
-    if (input_buffer->buffer[0] == '.') {
-      switch (do_meta_command(input_buffer)) {
-        case (META_COMMAND_SUCCESS):
-          continue;
-        case (META_COMMAND_UNRECOGNIZED_COMMAND):
-          printf("Unrecognized command '%s'\n", input_buffer->buffer);
-          continue;
-      }
-
+    // Allocate memory for the table
+    table = (char**)malloc(table_capacity * sizeof(char*));
+    if (!table) {
+        printf("Error for memory allocation\n");
+        return;
     }
 
-    Statement statement;
-    switch (prepare_statement(input_buffer, &statement)) {
-      case (PREPARE_SUCCESS):
-        printf("recognized statement\n");
-        break;
-      case (PREPARE_UNRECOGNIZED_STATEMENT):
-        printf("Unrecognized keyword at start of '%s'.\n",
-               input_buffer->buffer);
-        continue;
+    while (1) {
+        printf("sql> ");
+        ssize_t read = getline(&input, &len, stdin);
+        if (read == -1) {
+            printf("\nSee you !\n");
+            break;
+        }
+
+        // Delete the '\n' at the end for the getline
+        if (input[read - 1] == '\n') {
+            input[read - 1] = '\0';
+        }
+
+        if (strncmp(input, "INSERT ", 7) == 0) {
+            // Catch the value after "INSERT "
+            char *value = input + 7;
+
+            // if the table is full, expend capacity
+            if (table_size == table_capacity) {
+                table_capacity *= 2;
+                table = (char**)realloc(table, table_capacity * sizeof(char*));
+                if (!table) {
+                    printf("Error for memory reallocation\n");
+                    return;
+                }
+            }
+
+            // Add the new value to the table
+            table[table_size] = strdup(value);
+            table_size++;
+
+            printf("Value '%s' inserted.\n", value);
+        } else if (strcmp(input, "SELECT") == 0) {
+            // Display all the values of the table
+            if (table_size == 0) {
+                printf("No values to display.\n");
+            } else {
+                printf("Table :\n");
+                for (size_t i = 0; i < table_size; i++) {
+                    printf("%s\n", table[i]);
+                }
+            }
+        } else if (strcmp(input, "EXIT") == 0) {
+            printf("See you !\n");
+            break;
+        } else {
+            printf("Invalid command. Try : INSERT, SELECT, ou EXIT.\n");
+        }
     }
-    // Execute the command
-    execute_statement(&statement);
-     printf("Executed.\n");
-  }
+
+    // free the allocated memory for the table and the user input
+    for (size_t i = 0; i < table_size; i++) {
+        free(table[i]);
+    }
+    free(table);
+    free(input);
 }
+
