@@ -9,7 +9,6 @@ int main() {
     printf("- SELECT: Displays the values\n");
     printf("- EXIT: Exits the program\n");
 
-    // Démarre la boucle REPL
     repl();
 
     return 0;
